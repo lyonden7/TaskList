@@ -9,7 +9,12 @@ import UIKit
 
 class TaskViewController: UIViewController {
     
+    // MARK: - Public Properties
+    var delegate: TaskViewControllerDelegate!
+    
     // MARK: - Private Properties
+    private let viewContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    
     /// Текстовое поле для добавления новой Task.
     /// Свойство lazy (ленивое), так как нам нужно отложить инициализацию - инициализация произойдет только в момент обращения к этому свойству.
     private lazy var taskTextField: UITextField = {
@@ -25,7 +30,7 @@ class TaskViewController: UIViewController {
             withTitle: "Save Task",
             andColor: UIColor(red: 21/255, green: 101/255, blue: 192/255, alpha: 194/255),
             action: UIAction { [unowned self] _ in
-                dismiss(animated: true)
+                save()
             }
         )
     }()
@@ -101,5 +106,22 @@ extension TaskViewController {
             cancelButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 40),
             cancelButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -40)
         ])
+    }
+    
+    /// Метод для сохранения введенных пользователем данных по нажатию на кнопку "Save".
+    private func save() {
+        let task = Task(context: viewContext)
+        task.title = taskTextField.text
+        
+        if viewContext.hasChanges {
+            do {
+                try viewContext.save()
+            } catch let error {
+                print(error)
+            }
+        }
+        
+        delegate.reloadData()
+        dismiss(animated: true)
     }
 }
