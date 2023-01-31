@@ -10,8 +10,6 @@ import UIKit
 class TaskListViewController: UITableViewController {
     
     // MARK: - Private Properties
-    private let viewContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
-    
     /// Идентификатор ячейки
     private let cellID = "task"
     /// Список задач для отображения на экране
@@ -41,11 +39,25 @@ extension TaskListViewController {
         cell.contentConfiguration = content
         return cell
     }
+    
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            let task = taskList[indexPath.row]
+            taskList.remove(at: indexPath.row)
+            tableView.deleteRows(at: [indexPath], with: .fade)
+            StorageManager.shared.delete(task)
+        }
+    }
 }
 
 // MARK: - UITableViewDelegate
 extension TaskListViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let task = taskList[indexPath.row]
+        showUpdateAlert(from: task, withTitle: "Update task", withMessage: "What do you want to do?") {
+            tableView.reloadRows(at: [indexPath], with: .automatic)
+        }
+        
         tableView.deselectRow(at: indexPath, animated: true)
     }
 }
@@ -85,27 +97,47 @@ extension TaskListViewController {
         showAlert(withTitle: "New Task", andMessage: "What do you want to do?")
     }
     
-    /// Метод для восстановления данных из базы
-    private func fetchData() {
-        let fetchRequest = Task.fetchRequest()
-        
-        do {
-            taskList = try viewContext.fetch(fetchRequest)
-        } catch {
-            print(error.localizedDescription)
+    /// Метод для сохранения введенных пользователем данных по нажатию на кнопку "Save".
+    private func save(_ taskName: String) {
+        StorageManager.shared.create(taskName) { task in
+            taskList.append(task)
+            tableView.insertRows(
+                at: [IndexPath(row: taskList.count - 1, section: 0)],
+                with: .automatic
+            )
         }
     }
     
-    /// Метод для создания AlertController
+    /// Метод для обновления  введенных пользователем данных по нажатию на кнопку "Update".
+    private func update(_ task: Task, taskName: String) {
+        StorageManager.shared.update(task, newTask: taskName)
+    }
+    
+    /// Метод для восстановления данных из базы
+    private func fetchData() {
+        StorageManager.shared.fetchData { result in
+            switch result {
+            case .success(let taskList):
+                self.taskList = taskList
+            case .failure(let error):
+                print(error.localizedDescription)
+            }
+        }
+    }
+    
+    /// Метод для создания AlertController при добавлении новой Task
     private func showAlert(withTitle title: String, andMessage message: String) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        
         let saveAction = UIAlertAction(title: "Save", style: .default) { [unowned self] _ in
             guard let task = alert.textFields?.first?.text, !task.isEmpty else { return }
             save(task)
         }
         let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
+        
         alert.addAction(saveAction)
         alert.addAction(cancelAction)
+        
         alert.addTextField { textField in
             textField.placeholder = "New Task"
         }
@@ -113,21 +145,25 @@ extension TaskListViewController {
         present(alert, animated: true)
     }
     
-    /// Метод для сохранения введенных пользователем данных по нажатию на кнопку "Save".
-    private func save(_ taskName: String) {
-        let task = Task(context: viewContext)
-        task.title = taskName
-        taskList.append(task)
+    /// Метод для создания AlertController при обновлении выбранной Task
+    private func showUpdateAlert(from task: Task, withTitle title: String, withMessage message: String, completion: () -> Void) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         
-        let cellIndex = IndexPath(row: taskList.count - 1, section: 0)
-        tableView.insertRows(at: [cellIndex], with: .automatic)
-        
-        if viewContext.hasChanges {
-            do {
-                try viewContext.save()
-            } catch let error {
-                print(error)
-            }
+        let updateAction = UIAlertAction(title: "Update", style: .default) { [unowned self] _ in
+            guard let taskName = alert.textFields?.first?.text, !taskName.isEmpty else { return }
+            update(task, taskName: taskName)
+            tableView.reloadData()
         }
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
+        
+        alert.addAction(updateAction)
+        alert.addAction(cancelAction)
+        
+        alert.addTextField { textField in
+            textField.text = task.title
+        }
+        
+        present(alert, animated: true)
     }
 }
