@@ -11,10 +11,8 @@ import CoreData
 class StorageManager {
     static let shared = StorageManager()
     
-    private init() {}
-    
     // MARK: - Core Data stack
-    var persistentContainer: NSPersistentContainer = {
+    private let persistentContainer: NSPersistentContainer = {
         let container = NSPersistentContainer(name: "TaskList")
         container.loadPersistentStores(completionHandler: { (storeDescription, error) in
             if let error = error as NSError? {
@@ -24,13 +22,18 @@ class StorageManager {
         return container
     }()
     
-    lazy var context = persistentContainer.viewContext
+    private let viewContext: NSManagedObjectContext
+    
+    // MARK: - Private init
+    private init() {
+        viewContext = persistentContainer.viewContext
+    }
 
     // MARK: - Core Data Saving support
     func saveContext() {
-        if context.hasChanges {
+        if viewContext.hasChanges {
             do {
-                try context.save()
+                try viewContext.save()
             } catch {
                 let nserror = error as NSError
                 fatalError("Unresolved error \(nserror), \(nserror.userInfo)")
@@ -38,8 +41,9 @@ class StorageManager {
         }
     }
     
+    // MARK: - CRUD
     func create(_ taskName: String, completion: (Task) -> Void) {
-        let task = Task(context: context)
+        let task = Task(context: viewContext)
         task.title = taskName
         completion(task)
         saveContext()
@@ -49,20 +53,20 @@ class StorageManager {
         let fetchRequest = Task.fetchRequest()
         
         do {
-            let taskList = try context.fetch(fetchRequest)
+            let taskList = try viewContext.fetch(fetchRequest)
             completion(.success(taskList))
-        } catch {
-            print(error.localizedDescription)
+        } catch let error {
+            completion(.failure(error))
         }
-    }
-    
-    func delete(_ task: Task) {
-        context.delete(task)
-        saveContext()
     }
     
     func update(_ task: Task, newTask: String) {
         task.title = newTask
+        saveContext()
+    }
+    
+    func delete(_ task: Task) {
+        viewContext.delete(task)
         saveContext()
     }
 }

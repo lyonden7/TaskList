@@ -18,8 +18,7 @@ class TaskListViewController: UITableViewController {
     // MARK: - Life Cycle Methods
     override func viewDidLoad() {
         super.viewDidLoad()
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: cellID)
-        view.backgroundColor = .systemGray5
+        setupView()
         setupNavigationBar()
         fetchData()
     }
@@ -39,26 +38,26 @@ extension TaskListViewController {
         cell.contentConfiguration = content
         return cell
     }
-    
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-            let task = taskList[indexPath.row]
-            taskList.remove(at: indexPath.row)
-            tableView.deleteRows(at: [indexPath], with: .fade)
-            StorageManager.shared.delete(task)
-        }
-    }
 }
 
 // MARK: - UITableViewDelegate
 extension TaskListViewController {
+    // Edit task
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
         let task = taskList[indexPath.row]
-        showUpdateAlert(from: task, withTitle: "Update task", withMessage: "What do you want to do?") {
+        showAlert(task: task) {
             tableView.reloadRows(at: [indexPath], with: .automatic)
         }
-        
-        tableView.deselectRow(at: indexPath, animated: true)
+    }
+    
+    // Delete task
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            let task = taskList.remove(at: indexPath.row)
+            tableView.deleteRows(at: [indexPath], with: .fade)
+            StorageManager.shared.delete(task)
+        }
     }
 }
 
@@ -92,9 +91,15 @@ extension TaskListViewController {
         navigationController?.navigationBar.tintColor = .white
     }
     
+    /// Метод для настройки View
+    private func setupView() {
+        tableView.register(UITableViewCell.self, forCellReuseIdentifier: cellID)
+        view.backgroundColor = .systemGray5
+    }
+    
     /// Метод, с помощью которого презентуется AlertController для добавления новой Task
     @objc private func addNewTask() {
-        showAlert(withTitle: "New Task", andMessage: "What do you want to do?")
+        showAlert()
     }
     
     /// Метод для сохранения введенных пользователем данных по нажатию на кнопку "Save".
@@ -106,11 +111,6 @@ extension TaskListViewController {
                 with: .automatic
             )
         }
-    }
-    
-    /// Метод для обновления  введенных пользователем данных по нажатию на кнопку "Update".
-    private func update(_ task: Task, taskName: String) {
-        StorageManager.shared.update(task, newTask: taskName)
     }
     
     /// Метод для восстановления данных из базы
@@ -125,43 +125,29 @@ extension TaskListViewController {
         }
     }
     
-    /// Метод для создания AlertController при добавлении новой Task
-    private func showAlert(withTitle title: String, andMessage message: String) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        
-        let saveAction = UIAlertAction(title: "Save", style: .default) { [unowned self] _ in
-            guard let task = alert.textFields?.first?.text, !task.isEmpty else { return }
-            save(task)
-        }
-        let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
-        
-        alert.addAction(saveAction)
-        alert.addAction(cancelAction)
-        
-        alert.addTextField { textField in
-            textField.placeholder = "New Task"
-        }
-        
-        present(alert, animated: true)
+    /// Метод для обновления  введенных пользователем данных по нажатию на кнопку "Update".
+    private func update(_ task: Task, taskName: String) {
+        StorageManager.shared.update(task, newTask: taskName)
     }
-    
-    /// Метод для создания AlertController при обновлении выбранной Task
-    private func showUpdateAlert(from task: Task, withTitle title: String, withMessage message: String, completion: () -> Void) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+}
+
+// MARK: - Alert Controller
+extension TaskListViewController {
+    /// Метод для создания AlertController
+    /// - Parameters:
+    ///   - task: По умолчанию принимает nil. В случае, если в этот параметр передана задача, то значит, что мы находимся в режиме редактрирования. Если этот параметр не будет никак инициализирован, то значит, что мы в режиме добавления.
+    ///   - completion: По умолчанию принимает nil. Нужен для обновления интерфейса.
+    private func showAlert(task: Task? = nil, completion: (() -> Void)? = nil) {
+        let title = task != nil ? "Update task" : "New Task"
+        let alert = UIAlertController.createAlertController(with: title)
         
-        let updateAction = UIAlertAction(title: "Update", style: .default) { [unowned self] _ in
-            guard let taskName = alert.textFields?.first?.text, !taskName.isEmpty else { return }
-            update(task, taskName: taskName)
-            tableView.reloadData()
-        }
-        
-        let cancelAction = UIAlertAction(title: "Cancel", style: .destructive)
-        
-        alert.addAction(updateAction)
-        alert.addAction(cancelAction)
-        
-        alert.addTextField { textField in
-            textField.text = task.title
+        alert.action(task: task) { [weak self] taskName in
+            if let task = task, let completion = completion {
+                StorageManager.shared.update(task, newTask: taskName)
+                completion()
+            } else {
+                self?.save(taskName)
+            }
         }
         
         present(alert, animated: true)

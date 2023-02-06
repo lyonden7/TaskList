@@ -14,6 +14,7 @@
 		28AA687429846A52008F1E65 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 28AA687329846A52008F1E65 /* Assets.xcassets */; };
 		28AA687729846A52008F1E65 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 28AA687529846A52008F1E65 /* LaunchScreen.storyboard */; };
 		28AA68872987E092008F1E65 /* StorageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28AA68862987E092008F1E65 /* StorageManager.swift */; };
+		28AA6A0E2990686A008F1E65 /* AlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28AA6A0D2990686A008F1E65 /* AlertController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +27,7 @@
 		28AA687629846A52008F1E65 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		28AA687829846A52008F1E65 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		28AA68862987E092008F1E65 /* StorageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageManager.swift; sourceTree = "<group>"; };
+		28AA6A0D2990686A008F1E65 /* AlertController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +62,7 @@
 			children = (
 				28AA688229852CC1008F1E65 /* ViewControllers */,
 				28AA688529852CF3008F1E65 /* Services */,
+				28AA6A0C2990684B008F1E65 /* Extensions */,
 				28AA688129852C36008F1E65 /* App */,
 				28AA688329852CD7008F1E65 /* Resources */,
 				28AA688429852CE1008F1E65 /* Storyboards */,
@@ -108,6 +111,14 @@
 				28AA68862987E092008F1E65 /* StorageManager.swift */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		28AA6A0C2990684B008F1E65 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				28AA6A0D2990686A008F1E65 /* AlertController.swift */,
+			);
+			path = Extensions;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -182,6 +193,7 @@
 			files = (
 				28AA687229846A4F008F1E65 /* TaskList.xcdatamodeld in Sources */,
 				28AA686C29846A4F008F1E65 /* TaskListViewController.swift in Sources */,
+				28AA6A0E2990686A008F1E65 /* AlertController.swift in Sources */,
 				28AA68872987E092008F1E65 /* StorageManager.swift in Sources */,
 				28AA686829846A4F008F1E65 /* AppDelegate.swift in Sources */,
 				28AA686A29846A4F008F1E65 /* SceneDelegate.swift in Sources */,
